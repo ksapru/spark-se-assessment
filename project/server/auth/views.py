@@ -29,22 +29,23 @@ class RegisterAPI(MethodView):
                     email=post_data.get('email'),
                     password=post_data.get('password')
                 )
-
                 # insert the user
                 db.session.add(user)
                 db.session.commit()
                 # generate the auth token
                 auth_token = user.encode_auth_token(user.id)
-                responseObject = {
-                    'status': 'success',
-                    'message': 'Successfully registered.',
-                    'auth_token': auth_token.decode()
-                }
+                responseObject = {}
+                responseObject['status'] = 'success'
+                responseObject['message'] = 'Successfully registered.'
+                responseObject['auth_token'] = auth_token
+                
+                print(type(responseObject), responseObject)
                 return make_response(jsonify(responseObject)), 201
             except Exception as e:
                 responseObject = {
                     'status': 'fail',
-                    'message': 'Some error occurred. Please try again.'
+                    'message': e
+                    # 'message': 'Some error occurred. Please try again.'
                 }
                 return make_response(jsonify(responseObject)), 401
         else:
@@ -63,4 +64,25 @@ auth_blueprint.add_url_rule(
     '/auth/register',
     view_func=registration_view,
     methods=['POST', 'GET']
+)
+
+class UserIndexAPI(MethodView):
+    def get(self):
+        users = User.query.all()
+        response = []
+
+        for user in users:
+            tempuser = {
+                'id': user.id,
+                'email': user.email,
+                'admin': user.admin,
+                'registereed_on': user.registered_on
+            }
+            response.append(tempuser)
+        return make_response(jsonify(response)), 201
+
+auth_blueprint.add_url_rule(
+    '/users/index',
+    view_func=UserIndexAPI.as_view('view_api'),
+    methods=['GET']
 )
